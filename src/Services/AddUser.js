@@ -8,36 +8,50 @@ exports.Adduser = (req, res) => {
     return res.status(400).json({ message: "All fields are required" });
   }
 
-  const checkSql = "SELECT id FROM users WHERE email = ? AND Role = ?";
-  db.query(checkSql, [email, role], (err, result) => {
+ 
+  const emailSql = "SELECT id FROM users WHERE email = ? AND Role = ?";
+  db.query(emailSql, [email, role], (err, emailResult) => {
     if (err) {
       return res.status(500).json({ message: "Database error" });
     }
 
-    if (result.length > 0) {
+    if (emailResult.length > 0) {
       return res.status(409).json({ message: "Email already exists" });
     }
 
-    const saltRounds = 10;
-    bcrypt.hash(password, saltRounds, (err, hashedPassword) => {
+   
+    const contactSql = "SELECT id FROM users WHERE contact = ? AND Role = ?";
+    db.query(contactSql, [contact, role], (err, contactResult) => {
       if (err) {
-        return res.status(500).json({ message: "Password hashing failed" });
+        return res.status(500).json({ message: "Database error" });
       }
 
-      const insertSql =
-        "INSERT INTO users (Role, name, contact, email, Password) VALUES (?, ?, ?, ?, ?)";
+      if (contactResult.length > 0) {
+        return res.status(409).json({ message: "Contact already exists" });
+      }
 
-      db.query(
-        insertSql,
-        [role, name, contact, email, hashedPassword],
-        (err) => {
-          if (err) {
-            return res.status(500).json({ message: "Insert failed" });
-          }
-
-          res.status(201).json({ message: "User added successfully" });
+     
+      bcrypt.hash(password, 10, (err, hashedPassword) => {
+        if (err) {
+          return res.status(500).json({ message: "Password hashing failed" });
         }
-      );
+
+        
+        const insertSql =
+          "INSERT INTO users (Role, name, contact, email, Password) VALUES (?, ?, ?, ?, ?)";
+
+        db.query(
+          insertSql,
+          [role, name, contact, email, hashedPassword],
+          (err) => {
+            if (err) {
+              return res.status(500).json({ message: "Insert failed" });
+            }
+
+            res.status(201).json({ message: "User added successfully" });
+          }
+        );
+      });
     });
   });
 };

@@ -6,9 +6,9 @@ const AddUser=require("../Services/AddUser")
 
 router.post("/add", AddUser.Adduser);
 router.get("/display", adminController.display);
-
-router.put("/edit/:id", adminController.update);
 router.get("/:id", adminController.getUserById);
+router.put("/edit/:id", adminController.update);
+
 
 
 

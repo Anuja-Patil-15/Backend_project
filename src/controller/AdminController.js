@@ -9,6 +9,9 @@ exports.display = (req, res) => {
     const user=result;
    
   });
+
+
+  
 };
 
 exports.getUserById = (req, res) => {
