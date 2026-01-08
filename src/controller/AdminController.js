@@ -1,10 +1,13 @@
 const db = require("../db/database");
+const bcrypt=require("bcrypt")
 
 
 
 exports.display = (req, res) => {
   db.query("SELECT * FROM users", (err, result) => {
     res.json(result);
+    const user=result;
+   
   });
 };
 
