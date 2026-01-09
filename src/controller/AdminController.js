@@ -1,59 +1,50 @@
 const db = require("../db/database");
-const bcrypt=require("bcrypt")
+const bcrypt=require("bcrypt");
+const {displayAll,getUserByid,updateDataWithPassword,updateData}=require("../db/drizzleHelper")
 
 
-
+//Display all user on desktop
 exports.display = (req, res) => {
-  db.query("SELECT * FROM users", (err, result) => {
-    res.json(result);
-    const user=result;
-   
-  });
+   const result=displayAll();
+    return res.json(result);
+
+   };
 
 
-  
-};
+exports.getUserById = async (req, res) => {
+  try {
+    const { id } = req.params;
 
-exports.getUserById = (req, res) => {
-  const { id } = req.params;
+    const user = await getUserByid(Number(id));
 
-  db.query("SELECT * FROM users WHERE id = ?", [id], (err, result) => {
-    if (err) return res.status(500).json(err);
-    if (result.length === 0)
+    if (!user) {
       return res.status(404).json({ message: "User not found" });
+    }
 
-    res.json(result[0]);
-  });
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
 };
 
 
+//update users information
 exports.update = (req, res) => {
   const { role, name, contact, email, password } = req.body;
   const { id } = req.params;
 
-  let sql;
-  let values;
-
+ 
+  //password is updated if new password is provided if the password not provide then remain old password
   if (password && password.trim() !== "") {
-    sql = `
-      UPDATE users
-      SET Role = ?, name = ?, contact = ?, email = ?, Password = ?
-      WHERE id = ?
-    `;
-    values = [role, name, contact, email, password, id];
+  
+    updateData(role,name,email,contact,id)
+    
   } else {
-    sql = `
-      UPDATE users
-      SET Role = ?, name = ?, contact = ?, email = ?
-      WHERE id = ?
-    `;
-    values = [role, name, contact, email, id];
+    const hashedPassword=bcrypt.hash(password, 10);
+    updateDataWithPassword(role,name,email,contact,hashedPassword,id)
   }
 
-  db.query(sql, values, (err) => {
-    if (err) return res.status(500).json(err);
-    res.json({ message: "User updated successfully" });
-  });
+
 };
 
 

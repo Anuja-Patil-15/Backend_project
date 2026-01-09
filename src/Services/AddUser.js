@@ -1,57 +1,43 @@
 const db = require("../db/database");
 const bcrypt = require("bcrypt");
+const { checkEmailWithRole, checkContactWithRole, InsertUserData } = require("../db/drizzleHelper");
 
+// Check all fields are filled
 exports.Adduser = (req, res) => {
   const { role, name, contact, email, password } = req.body;
 
-  if (!role || !name || !email || !password) {
+  if (!role || !name || !email || !password || !contact) {
     return res.status(400).json({ message: "All fields are required" });
   }
 
- 
-  const emailSql = "SELECT id FROM users WHERE email = ? AND Role = ?";
-  db.query(emailSql, [email, role], (err, emailResult) => {
+  // Check email is already present for specific role
+  const user = checkEmailWithRole(email, role);
+  if (user) {
+    return res.status(409).json({ message: "Email already exists" });
+  }
+
+  // Check contact is already present for specific role
+  const result = checkContactWithRole(contact, role);
+  if (result) {
+    return res.status(409).json({ message: "Contact already exists" });
+  }
+
+  // Hash the password
+  bcrypt.hash(password, 10, (err, hashedPassword) => {
     if (err) {
-      return res.status(500).json({ message: "Database error" });
+      return res.status(500).json({ message: "Password hashing failed" });
     }
 
-    if (emailResult.length > 0) {
-      return res.status(409).json({ message: "Email already exists" });
-    }
+    // Add user details: Role, name, contact, email, Password
+    const value = {
+      role: role,
+      name: name,
+      contact: contact,
+      email: email,
+      password: hashedPassword
+    };
+    InsertUserData(value);
 
-   
-    const contactSql = "SELECT id FROM users WHERE contact = ? AND Role = ?";
-    db.query(contactSql, [contact, role], (err, contactResult) => {
-      if (err) {
-        return res.status(500).json({ message: "Database error" });
-      }
-
-      if (contactResult.length > 0) {
-        return res.status(409).json({ message: "Contact already exists" });
-      }
-
-     
-      bcrypt.hash(password, 10, (err, hashedPassword) => {
-        if (err) {
-          return res.status(500).json({ message: "Password hashing failed" });
-        }
-
-        
-        const insertSql =
-          "INSERT INTO users (Role, name, contact, email, Password) VALUES (?, ?, ?, ?, ?)";
-
-        db.query(
-          insertSql,
-          [role, name, contact, email, hashedPassword],
-          (err) => {
-            if (err) {
-              return res.status(500).json({ message: "Insert failed" });
-            }
-
-            res.status(201).json({ message: "User added successfully" });
-          }
-        );
-      });
-    });
+    res.status(201).json({ message: "User added successfully" });
   });
 };

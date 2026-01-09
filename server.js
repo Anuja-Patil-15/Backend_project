@@ -3,7 +3,7 @@ const app = express();
 require("dotenv").config();
 const cors = require("cors");
 app.use(express.json())
-
+app.set("strict routing", false);
 
 const userRoutes = require("./src/Routes/UserRoute");
 const adminRoutes=require("./src/Routes/AdminRoute")
