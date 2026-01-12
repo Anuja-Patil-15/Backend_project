@@ -8,6 +8,7 @@ router.post("/add", AddUser.Adduser);
 router.get("/display", adminController.display);
 router.get("/:id", adminController.getUserById);
 router.put("/edit/:id", adminController.update);
+router.put("/resetpassword/:id",adminController.changepassword);
 
 
 

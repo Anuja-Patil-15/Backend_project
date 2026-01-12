@@ -1,21 +1,23 @@
 const db = require("../db/database");
 const bcrypt=require("bcrypt");
-const {displayAll,getUserByid,updateDataWithPassword,updateData}=require("../db/drizzleHelper")
+
+const drizzleHelper=require("../db/drizzleHelper");
+const adminController={};
 
 
 //Display all user on desktop
-exports.display = (req, res) => {
-   const result=displayAll();
+adminController.display =async (req, res) => {
+   const result=await drizzleHelper.displayAll();
     return res.json(result);
 
    };
 
-
-exports.getUserById = async (req, res) => {
+//for edit get element by id
+adminController.getUserById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const user = await getUserByid(Number(id));
+    const user = await drizzleHelper.getUserByid(Number(id));
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -29,23 +31,34 @@ exports.getUserById = async (req, res) => {
 
 
 //update users information
-exports.update = (req, res) => {
-  const { role, name, contact, email, password } = req.body;
-  const { id } = req.params;
+adminController.update = async (req, res) => {
+  try {
+    const { role, name, email, contact } = req.body;
+    const { id } = req.params;
+      await drizzleHelper.updateData(role, name, contact, email, id);
+    res.status(200).json({ message: "User updated successfully" });
 
- 
-  //password is updated if new password is provided if the password not provide then remain old password
-  if (password && password.trim() !== "") {
-  
-    updateData(role,name,email,contact,id)
-    
-  } else {
-    const hashedPassword=bcrypt.hash(password, 10);
-    updateDataWithPassword(role,name,email,contact,hashedPassword,id)
+  } catch (error) {
+    console.error("UPDATE ERROR:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
+};
+adminController.changepassword = async (req, res) => {
+  try {
+    const { password } = req.body;
+    const { id } = req.params;
 
+   
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await drizzleHelper.resetPassword(hashedPassword, id);
 
+    return res.status(200).json({ message: "Password reset successful" });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    return res.json({ message: "Reset password error" });
+  }
 };
 
+module.exports=adminController;
 
 

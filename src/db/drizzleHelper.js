@@ -1,68 +1,83 @@
 const db=require("./database.js")
-const {users}=require("../drizzle/schema.js")
-const {eq}=require("drizzle-orm")
+const {user}=require("../drizzle/schema.js")
+const {eq,and}=require("drizzle-orm")
+const drizzleHelper={};
 //select all users
-module.exports.displayAll = async() => {
-  const user= db.select().from(users);
-  return resizeBy.json(user);
+drizzleHelper.displayAll = async() => {
+  const users=await db.select().from(user);
+  return users;
 };
 //get data by specific user by id
-module.exports.getUserByid=async(id)=>{
- const result= await db.select().from(users).where(eq(users.id,id));
+drizzleHelper.getUserByid=async(id)=>{
+ const result= await db.select().from(user).where(eq(user.id,id));
  return result[0];
 }
 //updates detail if password is not chnaged
-module.exports.updateData=async(PgRole,name,contact,ElementInternals,id)=>{
-  await db.update(users).set({
+drizzleHelper.updateData=async(role,name,contact,email,id)=>{
+  await db.update(user).set({
     Role:role,
     name:name,
     email:email,
     contact:contact,
-  }).where(eq(users.id,id));
+  }).where(eq(user.id,id));
 }
 //update detail if password is updated
-module.exports.updateDataWithPassword=async(PgRole,name,contact,ElementInternals,id)=>{
-  await db.update(users).set({
+drizzleHelper.updateDataWithPassword=async(role,name,contact,email,id,password)=>{
+  await db.update(user).set({
     Role:role,
     name:name,
     email:email,
     contact:contact,
-    Password:Password
-  }).where(eq(users.id,id));
+    Password:password
+  }).where(eq(user.id,id));
 }
 //get user data by using email
-module.exports.getDataByEmail = async (email) => {
-  try {
-    const user = await db.select().from(users).where(eq(users.email, email));
-    return user; // return array of users
-  } catch (err) {
-    console.error("getDataByEmail error:", err);
-    throw err; // let controller handle the error
-  }
+drizzleHelper.getDataByEmail = async (email) => {
+  return await db
+    .select()
+    .from(user)
+    .where(eq(user.email, email));
 };
 //check email is present for specific user
-module.exports.checkEmailWithRole=async(email,role)=>{
-  const user = await db
+drizzleHelper.checkEmailWithRole=async(email,role)=>{
+  const users = await db
   .select()
-  .from(users)
+  .from(user)
   .where(
-    eq(users.email, email),
-    eq(users.Role, role) 
-  );
+  and(
+    eq(user.email, email),
+    eq(user.Role, role)
+  )
+);
+return users;
   
  
 }
 //check contact is present for specific user
-module.exports.checkContactWithRole=async(conatat,role)=>{
-  const user = await db
+drizzleHelper.checkContactWithRole=async(contact,role)=>{
+  const users = await db
   .select()
-  .from(users)
+  .from(user)
   .where(
-    eq(users.contact, conatat),
-    eq(users.Role, role) 
-  );
+  and(
+    eq(user.contact, contact),
+    eq(user.Role, role)
+  )
+);
+  return users;
 }
 //Insert User Data Role, name, contact, email, Password
-module.exports.InsertUserData=async(value)=>{
-  await db.insert(Role,name,contact,email,Password).value(value.role,value.name,value.contact,value.email,value.password)
+drizzleHelper.InsertUserData = async (value) => {
+  return await db.insert(user).values({
+    Role: value.role,
+    name: value.name,
+    contact: value.contact,
+    email: value.email,
+    Password: value.password,
+  });
+};
+//Reset the password
+drizzleHelper.resetPassword=async(password,id)=>{
+  await db.update(user).set({Password:password}).where(eq(id,user.id));
 }
+module.exports=drizzleHelper;

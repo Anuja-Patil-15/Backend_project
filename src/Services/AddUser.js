@@ -1,43 +1,41 @@
-const db = require("../db/database");
 const bcrypt = require("bcrypt");
-const { checkEmailWithRole, checkContactWithRole, InsertUserData } = require("../db/drizzleHelper");
+const drizzleHelper=require("../db/drizzleHelper")
+const AddUser={}
+AddUser.Adduser = async (req, res) => {
+  try {
+    const { role, name, contact, email, password } = req.body;
 
-// Check all fields are filled
-exports.Adduser = (req, res) => {
-  const { role, name, contact, email, password } = req.body;
-
-  if (!role || !name || !email || !password || !contact) {
-    return res.status(400).json({ message: "All fields are required" });
-  }
-
-  // Check email is already present for specific role
-  const user = checkEmailWithRole(email, role);
-  if (user) {
-    return res.status(409).json({ message: "Email already exists" });
-  }
-
-  // Check contact is already present for specific role
-  const result = checkContactWithRole(contact, role);
-  if (result) {
-    return res.status(409).json({ message: "Contact already exists" });
-  }
-
-  // Hash the password
-  bcrypt.hash(password, 10, (err, hashedPassword) => {
-    if (err) {
-      return res.status(500).json({ message: "Password hashing failed" });
+    if (!role || !name || !email || !password || !contact) {
+      return res.status(400).json({ message: "All fields are required" });
     }
 
-    // Add user details: Role, name, contact, email, Password
-    const value = {
-      role: role,
-      name: name,
-      contact: contact,
-      email: email,
-      password: hashedPassword
-    };
-    InsertUserData(value);
+    // check email
+    const emailExists = await drizzleHelper.checkEmailWithRole(email, role);
+    if (emailExists.length > 0) {
+      return res.status(409).json({ message: "Email already exists" });
+    }
 
-    res.status(201).json({ message: "User added successfully" });
-  });
+    // check contact
+    const contactExists = await drizzleHelper.checkContactWithRole(contact, role);
+    if (contactExists.length > 0) {
+      return res.status(409).json({ message: "Contact already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await drizzleHelper.InsertUserData({
+      role,
+      name,
+      contact,
+      email,
+      password: hashedPassword
+    });
+
+    return res.status(201).json({ message: "User added successfully" });
+
+  } catch (err) {
+    console.error("Add user error:", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 };
+module.exports=AddUser;
