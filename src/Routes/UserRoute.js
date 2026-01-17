@@ -6,7 +6,7 @@ const LoginController=require("../controller/LoginUserController")
 
 
 router.post("/login", LoginController.login);   
-
+router.post("/logout",LoginController.logout);
 
 
 

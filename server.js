@@ -1,20 +1,31 @@
+require("dotenv").config();
 const express = require("express");
 const app = express();
-require("dotenv").config();
+
 const cors = require("cors");
-app.use(express.json())
-app.set("strict routing", false);
+const cookieParser = require("cookie-parser");
+
+const verifyToken = require("./src/middleware/authmiddleware");
 
 const userRoutes = require("./src/Routes/UserRoute");
-const adminRoutes=require("./src/Routes/AdminRoute")
+const adminRoutes = require("./src/Routes/AdminRoute");
 
+app.use(express.json());
+app.use(cookieParser());
 
-app.use(cors());
-app.use(express.json()); 
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+  })
+);
 
 
 app.use("/user", userRoutes);
-app.use("/admin",adminRoutes);
+
+//  Protect admin routes
+app.use("/admin", verifyToken, adminRoutes);
+
 
 
 const PORT = process.env.PORT || 5000;

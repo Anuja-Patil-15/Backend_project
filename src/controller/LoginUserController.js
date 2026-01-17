@@ -1,8 +1,14 @@
+require("dotenv").config();
 const bcrypt = require("bcrypt");
 const { getDataByEmail } = require("../db/drizzleHelper");
-const drizzleHelper=require("../db/drizzleHelper")
-const LoginController={};
+const drizzleHelper = require("../db/drizzleHelper")
+const jwt = require('jsonwebtoken');
+
+
+const LoginController = {};
+
 LoginController.login = async (req, res) => {
+  console.log(process.env.SECRET_KEY)
   try {
     console.log("REQ BODY:", req.body);
 
@@ -24,6 +30,18 @@ LoginController.login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({ message: "Wrong password" });
     }
+    
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.Role },
+      process.env.SECRET_KEY,
+      { expiresIn: "15m" }
+    );
+    res.cookie("token", token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: false
+    });
+    console.log(token);
 
     return res.status(200).json({
       username: user.name,
@@ -36,4 +54,14 @@ LoginController.login = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-module.exports=LoginController;
+LoginController.logout=(req,res)=>{
+  res.clearCookie("token",{
+    httpOnly:true,
+    sameSite:"lax",
+    secure:false,
+  });
+   return res.status(200).json({
+    message: "Logged out successfully",
+  });
+}
+module.exports = LoginController;
